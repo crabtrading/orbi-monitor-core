@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import http.cookiejar
 import json
+import re
 import ssl
 import urllib.parse
 import urllib.request
@@ -12,6 +13,7 @@ from orbi_monitor_core.models import RouterSnapshot
 
 
 SOAP_SESSION_ID = "A7D88AE69687E58D9A00"
+SETTING_KEY_RE = re.compile(r"^[A-Za-z0-9_]+$")
 
 
 class OrbiClient:
@@ -75,7 +77,10 @@ class OrbiClient:
             if "=" not in line:
                 continue
             key, value = line.split("=", 1)
-            settings[key.strip()] = value.strip()
+            normalized_key = key.strip()
+            if not SETTING_KEY_RE.fullmatch(normalized_key):
+                continue
+            settings[normalized_key] = value.strip()
         return settings
 
     def _soap_envelope(self, body: str) -> bytes:
@@ -272,12 +277,7 @@ class OrbiClient:
             else None
         )
 
-        sources = {
-            "ajax": {
-                "current_setting": current,
-            },
-            "soap": soap_payloads,
-        }
+        sources = {"soap": soap_payloads}
         if soap_errors:
             sources["soap_errors"] = soap_errors
 
@@ -315,7 +315,10 @@ class OrbiClient:
                 soap_satellites,
             ) = self._fetch_soap_state()
             sources["ajax"]["current_setting"] = current_setting
-            sources.update(soap_sources)
+            if isinstance(soap_sources.get("soap"), dict):
+                sources["soap"] = soap_sources["soap"]
+            if isinstance(soap_sources.get("soap_errors"), dict):
+                sources["soap_errors"] = soap_sources["soap_errors"]
         except Exception as error:
             sources["soap_errors"] = {"session": str(error)}
 

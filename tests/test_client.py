@@ -205,7 +205,23 @@ def test_snapshot_merges_ajax_and_soap_fields() -> None:
         current_setting={"SOAP_HTTPs_Port": "443", "LoginMethod": "2.0"},
         router_info={"ModelName": "RBR750", "Firmwareversion": "V7.2.8.2"},
         support_features={"AttachedDevice": "3.0", "SatelliteInfo": "2.0"},
-        sources={"soap": {"get_info": {"ModelName": "RBR750"}}},
+        sources={
+            "ajax": {
+                "basic_status": AJAX_BASIC,
+                "attached_devices": AJAX_ATTACHED,
+                "current_setting": {"SOAP_HTTPs_Port": "443", "LoginMethod": "2.0"},
+            },
+            "soap": {
+                "get_info": {"ModelName": "RBR750"},
+                "get_support_feature_list_xml": {
+                    "newFeatureList": {
+                        "features": {"AttachedDevice": "3.0", "SatelliteInfo": "2.0"}
+                    }
+                },
+                "get_attach_device2": {"NewAttachDevice": {"Device": {"MAC": "AA:AA:AA:AA:AA:01"}}},
+                "get_all_satellites": {"CurrentSatellites": {"satellite": {"DeviceName": "Satellite A"}}},
+            },
+        },
     )
     payload = snapshot.to_dict()
     assert payload["devices"][0]["ssid"] == "HOME_WIFI_5G"
@@ -219,4 +235,6 @@ def test_snapshot_merges_ajax_and_soap_fields() -> None:
     assert payload["current_setting"]["SOAP_HTTPs_Port"] == "443"
     assert payload["router_info"]["ModelName"] == "RBR750"
     assert payload["support_features"]["AttachedDevice"] == "3.0"
+    assert payload["sources"]["ajax"]["basic_status"]["internet"] == 0
+    assert "devices" in payload["sources"]["ajax"]["attached_devices"]
     assert payload["sources"]["soap"]["get_info"]["ModelName"] == "RBR750"
