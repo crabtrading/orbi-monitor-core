@@ -5,6 +5,7 @@ import json
 import sys
 
 from orbi_monitor_core.client import OrbiClient
+from orbi_monitor_core.throughput import measure_throughput
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -22,6 +23,17 @@ def build_parser() -> argparse.ArgumentParser:
         default="Wired",
         help="Expected backhaul type for the tracked satellite",
     )
+    parser.add_argument(
+        "--throughput-probe-host",
+        default="",
+        help="Optional probe host for local ping/iperf/speedtest throughput estimation",
+    )
+    parser.add_argument(
+        "--throughput-probe-port",
+        type=int,
+        default=5201,
+        help="iperf3 server port for the throughput probe",
+    )
     parser.add_argument("--pretty", action="store_true", help="Pretty-print JSON")
     return parser
 
@@ -37,6 +49,11 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     payload = snapshot.to_dict()
+    if args.throughput_probe_host:
+        payload["throughput"] = measure_throughput(
+            probe_host=args.throughput_probe_host,
+            probe_port=args.throughput_probe_port,
+        ).to_dict()
     dump_kwargs = {"ensure_ascii": False}
     if args.pretty:
         dump_kwargs["indent"] = 2

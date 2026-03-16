@@ -10,6 +10,11 @@ This project exposes the useful router data that is available through:
 
 It is designed for people who want to build their own dashboards, automations, exporters, or alerts without depending on the stock Orbi UI.
 
+It also includes an optional local throughput helper for cases where you want to compare:
+
+- WAN download speed from the measurement host
+- probe download-like throughput to a node behind a satellite
+
 ## What it returns
 
 - Internet status
@@ -25,6 +30,7 @@ It is designed for people who want to build their own dashboards, automations, e
 - Satellite backhaul type (`BHConnType`)
 - Satellite signal strength
 - Parsed raw action outputs under `sources.ajax` and `sources.soap`
+- Optional local `ping + iperf3 + speedtest` throughput estimate
 
 ## Supported hardware
 
@@ -52,6 +58,7 @@ orbi-monitor-core \
   --username admin \
   --password 'your-router-password' \
   --target-satellite-name satellite-a \
+  --throughput-probe-host 192.168.1.31 \
   --pretty
 ```
 
@@ -73,6 +80,13 @@ Example output:
       "ssid": "HOME_WIFI_5G"
     }
   ],
+  "throughput": {
+    "probe_host": "192.168.1.31",
+    "source_mode": "wifi_estimate",
+    "lan_reverse_mbps": 185.4,
+    "wan_download_mbps": 207.39,
+    "status": "ok"
+  },
   "satellites": [
     {
       "name": "satellite-a",
@@ -97,6 +111,20 @@ snapshot = client.fetch_snapshot(
 print(snapshot.target_satellite.name)
 print(snapshot.target_satellite.connection_type)
 print(snapshot.devices[0].signal_strength)
+```
+
+Optional throughput probe:
+
+```python
+from orbi_monitor_core import measure_throughput
+
+sample = measure_throughput(
+    probe_host="192.168.1.31",
+    probe_port=5201,
+)
+
+print(sample.lan_reverse_mbps)
+print(sample.wan_download_mbps)
 ```
 
 ## Field reference
@@ -138,6 +166,7 @@ That document covers:
 ## Notes
 
 - `SignalStrength` exposed by SOAP is the router-provided quality metric, not guaranteed to be RSSI in dBm.
+- The optional throughput helper is a host-side estimate. If your measuring host is on Wi-Fi, it is not proof of wired backhaul truth.
 - This project does not ship any frontend, deployment system, or cloud integration.
 - No passwords, tokens, domains, or private configs are included in this repository.
 

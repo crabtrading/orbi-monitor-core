@@ -4,6 +4,7 @@ import json
 
 from orbi_monitor_core.client import OrbiClient
 from orbi_monitor_core.models import RouterSnapshot
+from orbi_monitor_core.throughput import parse_iperf_output, parse_ping_output, parse_speedtest_output
 
 
 SOAP_ATTACH_DEVICE2 = """<?xml version="1.0" encoding="UTF-8"?>
@@ -238,3 +239,36 @@ def test_snapshot_merges_ajax_and_soap_fields() -> None:
     assert payload["sources"]["ajax"]["basic_status"]["internet"] == 0
     assert "devices" in payload["sources"]["ajax"]["attached_devices"]
     assert payload["sources"]["soap"]["get_info"]["ModelName"] == "RBR750"
+
+
+def test_parse_ping_output() -> None:
+    output = """
+PING 192.168.1.31 (192.168.1.31) 56(84) bytes of data.
+
+--- 192.168.1.31 ping statistics ---
+10 packets transmitted, 10 received, 0% packet loss, time 9015ms
+rtt min/avg/max/mdev = 3.714/6.061/10.728/2.346 ms
+"""
+    avg, max_value, loss = parse_ping_output(output)
+    assert avg == 6.061
+    assert max_value == 10.728
+    assert loss == 0
+
+
+def test_parse_iperf_output_prefers_sum_received() -> None:
+    output = """
+{
+  "end": {
+    "sum_sent": {"bits_per_second": 149000000},
+    "sum_received": {"bits_per_second": 151500000}
+  }
+}
+"""
+    assert parse_iperf_output(output) == 151.5
+
+
+def test_parse_speedtest_output() -> None:
+    output = '{"download": 207388662.66, "upload": 113599142.51}'
+    download, upload = parse_speedtest_output(output)
+    assert download == 207.39
+    assert upload == 113.6

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "orbi-monitor-core"
-version = "0.1.1"
+version = "0.1.2"
 description = "Core Orbi RBR750/RBS750 AJAX and SOAP data collector"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -21,6 +21,9 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Topic :: System :: Networking :: Monitoring",
+]
+dependencies = [
+  "speedtest-cli==2.1.3",
 ]
 
 [project.scripts]
