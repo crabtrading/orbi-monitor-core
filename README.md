@@ -8,6 +8,7 @@ Build your own Orbi observability stack without depending on the stock UI.
 - normalized attached-client data for your own dashboards and automations
 - optional host-side throughput estimation
 - optional native per-device traffic telemetry using `tc + eBPF + libbpf`
+- failover-aware output that can carry active uplink metadata from an external WAN controller
 
 It is designed for people who want raw data, stable schemas, and code-level control.
 
@@ -43,6 +44,10 @@ This project turns those hidden router responses into a clean Python API and CLI
   - live `download_bps`
   - live `upload_bps`
   - per-device daily totals
+- optional upstream block in normalized traffic output so your dashboard can show:
+  - active uplink
+  - failover state
+  - last switch reason
 
 ## Architecture
 
@@ -105,7 +110,21 @@ Read native device traffic from the Unix socket:
 orbi-monitor-device-traffic \
   --socket-path /run/orbi-monitor-core/device-traffic.sock \
   --dashboard-json ./snapshot.json \
+  --upstream-json ./upstream.json \
   --pretty
+```
+
+Example `upstream.json`:
+
+```json
+{
+  "checked_at": "2026-03-17T20:00:03Z",
+  "mode": "failover_wan",
+  "active_label": "Secondary WAN",
+  "last_switch_at": "2026-03-17T19:58:11Z",
+  "last_reason": "primary unreachable",
+  "recovery_state": "degraded"
+}
 ```
 
 ## Example output
@@ -187,8 +206,16 @@ It uses:
 - `eBPF` for authoritative byte accounting
 - `libbpf` for direct pinned-map reads
 - a Unix socket for lightweight snapshot delivery
+- caller-supplied upstream metadata for failover-aware payloads
 
 It does not classify applications. That is intentionally deferred to a future DPI layer such as `nDPI`.
+
+If your Linux router already tracks WAN failover outside this project, you can pass that state into the
+normalizer and keep a single payload for:
+
+- device traffic
+- current uplink
+- failover or recovery metadata
 
 The implementation details live in [docs/DEVICE_TRAFFIC.md](docs/DEVICE_TRAFFIC.md).
 

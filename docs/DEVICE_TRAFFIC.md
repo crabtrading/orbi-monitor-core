@@ -30,6 +30,7 @@ The Python helper in `orbi_monitor_core/device_traffic.py` is intentionally ligh
 - merge with router snapshot device metadata
 - apply infrastructure MAC fallback rules
 - emit normalized JSON for dashboards or exporters
+- optionally inline caller-provided upstream or failover metadata
 
 ## Accounting model
 
@@ -280,6 +281,17 @@ The Python normalizer converts that into a dashboard-friendly payload with:
 - optional `upstream` block supplied by the caller
 - an `unattributed` bucket for traffic that could not be safely mapped to an endpoint device
 
+The `upstream` block is intentionally pass-through. This library does not impose a WAN failover policy engine,
+but it does make it easy to keep failover state in the same payload as per-device traffic.
+
+Typical fields callers may inline include:
+
+- `active_label`
+- `mode`
+- `last_switch_at`
+- `last_reason`
+- `recovery_state`
+
 ## Attribution rules
 
 The collector records:
@@ -358,4 +370,5 @@ If direct MAC attribution looks wrong:
 
 - This collector does not classify applications.
 - `nDPI` or similar DPI should be layered later as a separate classification stage.
+- WAN failover detection is expected to come from an external controller or router service; this package only preserves that metadata alongside traffic output.
 - Hardware offload and fast-path features may bypass `tc`; validate your deployment before relying on the counters.
