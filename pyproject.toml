@@ -29,6 +29,7 @@ dependencies = [
 [project.scripts]
 orbi-monitor-core = "orbi_monitor_core.cli:main"
 orbi-monitor-device-traffic = "orbi_monitor_core.device_traffic:main"
+orbi-monitor-failover = "orbi_monitor_core.failover:main"
 
 [tool.setuptools.packages.find]
 include = ["orbi_monitor_core*"]

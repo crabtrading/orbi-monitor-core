@@ -8,7 +8,8 @@ Build your own Orbi observability stack without depending on the stock UI.
 - normalized attached-client data for your own dashboards and automations
 - optional host-side throughput estimation
 - optional native per-device traffic telemetry using `tc + eBPF + libbpf`
-- failover-aware output that can carry active uplink metadata from an external WAN controller
+- optional Linux failover policy control for primary/secondary WAN routing
+- failover-aware output that can carry active uplink metadata into the same payload as device telemetry
 
 It is designed for people who want raw data, stable schemas, and code-level control.
 
@@ -40,6 +41,10 @@ This project turns those hidden router responses into a clean Python API and CLI
   - `SignalStrength`
 - parsed raw response sources for debugging and reverse engineering
 - optional local throughput estimate with `ping + iperf3 + speedtest`
+- optional Linux failover controller that can:
+  - monitor primary and backup uplinks
+  - switch route preference with metrics
+  - emit structured upstream status JSON
 - optional native device traffic collector that exports:
   - live `download_bps`
   - live `upload_bps`
@@ -61,6 +66,12 @@ The repository is intentionally split into two layers:
   - attaches `tc` eBPF programs on the LAN interface
   - reads pinned maps through `libbpf`
   - exports snapshots over a Unix domain socket
+- `orbi_monitor_core.failover`
+  - Linux-only failover controller
+  - resolves uplinks from NetworkManager
+  - health-checks WANs with ICMP
+  - switches route preference using `ip route`
+  - emits upstream/failover JSON for dashboards
 
 That separation keeps the Orbi collector reusable even if you do not want the Linux traffic telemetry layer.
 
@@ -114,6 +125,16 @@ orbi-monitor-device-traffic \
   --pretty
 ```
 
+Generate `upstream.json` with the built-in failover controller:
+
+```bash
+orbi-monitor-failover \
+  --primary-connection "Wired connection 1" \
+  --failover-connection "Wired connection 2" \
+  --mode status \
+  --pretty > upstream.json
+```
+
 Example `upstream.json`:
 
 ```json
@@ -125,6 +146,19 @@ Example `upstream.json`:
   "last_reason": "primary unreachable",
   "recovery_state": "degraded"
 }
+```
+
+Run one failover policy cycle:
+
+```bash
+orbi-monitor-failover \
+  --primary-connection "Wired connection 1" \
+  --failover-connection "Wired connection 2" \
+  --primary-label "Primary WAN" \
+  --failover-label "Secondary WAN" \
+  --check-target 1.1.1.1 \
+  --check-target 8.8.8.8 \
+  --pretty
 ```
 
 ## Example output
@@ -210,7 +244,7 @@ It uses:
 
 It does not classify applications. That is intentionally deferred to a future DPI layer such as `nDPI`.
 
-If your Linux router already tracks WAN failover outside this project, you can pass that state into the
+You can feed upstream state from the built-in failover controller or another router service into the
 normalizer and keep a single payload for:
 
 - device traffic
@@ -218,6 +252,23 @@ normalizer and keep a single payload for:
 - failover or recovery metadata
 
 The implementation details live in [docs/DEVICE_TRAFFIC.md](docs/DEVICE_TRAFFIC.md).
+
+## Failover policy controller
+
+The optional failover controller is aimed at Linux soft-router deployments where:
+
+- Orbi is in `AP mode`
+- the Linux host owns the routed WAN path
+- NetworkManager manages the primary and backup uplinks
+
+It supports:
+
+- primary and secondary WAN health checks
+- threshold-based promotion and recovery
+- route metric switching with `ip route replace`
+- structured upstream output that can be fed into the traffic normalizer
+
+The implementation details live in [docs/FAILOVER.md](docs/FAILOVER.md).
 
 ## Documentation
 
@@ -229,6 +280,8 @@ The implementation details live in [docs/DEVICE_TRAFFIC.md](docs/DEVICE_TRAFFIC.
   - reproducible workflow for discovering and validating new actions
 - [docs/DEVICE_TRAFFIC.md](docs/DEVICE_TRAFFIC.md)
   - native collector internals, socket schema, attribution model, and troubleshooting
+- [docs/FAILOVER.md](docs/FAILOVER.md)
+  - Linux failover controller, policy model, route switching, and status output
 
 ## Design principles
 
@@ -244,6 +297,7 @@ The implementation details live in [docs/DEVICE_TRAFFIC.md](docs/DEVICE_TRAFFIC.
 - `SignalStrength` exposed by SOAP is a router-provided quality metric, not guaranteed to be RSSI in dBm.
 - The throughput helper is a host-side estimate. If your measuring host is on Wi-Fi, it is not proof of wired backhaul truth.
 - The native collector is Linux-only and expects the measurement host to be the active router for routed client traffic.
+- The failover controller is Linux-only and assumes `NetworkManager`, `nmcli`, and `ip` are available.
 - Hardware offload and fast-path features may bypass `tc`; validate your deployment before trusting the counters.
 - No passwords, tokens, domains, or private deployment configs are included in this repository.
 

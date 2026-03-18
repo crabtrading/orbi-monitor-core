@@ -281,8 +281,12 @@ The Python normalizer converts that into a dashboard-friendly payload with:
 - optional `upstream` block supplied by the caller
 - an `unattributed` bucket for traffic that could not be safely mapped to an endpoint device
 
-The `upstream` block is intentionally pass-through. This library does not impose a WAN failover policy engine,
-but it does make it easy to keep failover state in the same payload as per-device traffic.
+The `upstream` block is intentionally pass-through. This library can accept metadata from either:
+
+- its own optional Linux failover controller
+- another external WAN controller
+
+That keeps failover state in the same payload as per-device traffic without forcing a single deployment model.
 
 Typical fields callers may inline include:
 
@@ -370,5 +374,5 @@ If direct MAC attribution looks wrong:
 
 - This collector does not classify applications.
 - `nDPI` or similar DPI should be layered later as a separate classification stage.
-- WAN failover detection is expected to come from an external controller or router service; this package only preserves that metadata alongside traffic output.
+- WAN failover metadata may come from the built-in Linux failover controller or another upstream controller; the traffic normalizer preserves that metadata alongside device counters.
 - Hardware offload and fast-path features may bypass `tc`; validate your deployment before relying on the counters.
