@@ -161,6 +161,53 @@ orbi-monitor-failover \
   --pretty
 ```
 
+## End-to-end example
+
+This is the simplest three-step flow if you want a single payload that includes:
+
+- Orbi router state
+- failover status
+- per-device traffic
+
+1. Collect the current Orbi snapshot:
+
+```bash
+orbi-monitor-core \
+  --host http://192.168.1.1 \
+  --username admin \
+  --password 'your-router-password' \
+  --pretty > snapshot.json
+```
+
+2. Emit current primary/secondary WAN state:
+
+```bash
+orbi-monitor-failover \
+  --primary-connection "Wired connection 1" \
+  --failover-connection "Wired connection 2" \
+  --primary-label "Primary WAN" \
+  --failover-label "Secondary WAN" \
+  --mode status \
+  --pretty > upstream.json
+```
+
+3. Normalize live device traffic with upstream metadata:
+
+```bash
+orbi-monitor-device-traffic \
+  --socket-path /run/orbi-monitor-core/device-traffic.sock \
+  --dashboard-json ./snapshot.json \
+  --upstream-json ./upstream.json \
+  --pretty
+```
+
+That final payload is designed to be easy to feed into:
+
+- a custom web dashboard
+- a periodic exporter
+- a local API wrapper
+- your own alerting logic
+
 ## Example output
 
 ```json
