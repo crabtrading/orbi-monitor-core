@@ -1,49 +1,67 @@
 # orbi-monitor-core
 
-Lightweight backend-only collector for Netgear Orbi RBR750/RBS750.
+Build your own Orbi observability stack without depending on the stock UI.
 
-This project exposes the useful router data that is available through:
+`orbi-monitor-core` is a backend-first toolkit for Netgear Orbi networks. It gives you:
 
-- `POST /ajax/basicStatus.cgi`
-- `POST /ajax/get_attached_devices`
-- Netgear app SOAP over `https://ROUTER_IP:443/soap/server_sa/`
+- structured router and satellite state from hidden AJAX and SOAP endpoints
+- normalized attached-client data for your own dashboards and automations
+- optional host-side throughput estimation
+- optional native per-device traffic telemetry using `tc + eBPF + libbpf`
 
-It is designed for people who want to build their own dashboards, automations, exporters, or alerts without depending on the stock Orbi UI.
+It is designed for people who want raw data, stable schemas, and code-level control.
 
-It also includes an optional local throughput helper for cases where you want to compare:
+![Router topology overview](docs/assets/router-topology-overview.svg)
 
-- WAN download speed from the measurement host
-- probe download-like throughput to a node behind a satellite
+## Why this project exists
 
-It now also includes an optional **native device traffic collector** built with:
+Orbi exposes useful state, but not in a form that is easy to reuse. The stock UI is fine for manual checks, but weak if you want to:
 
-- `tc`
-- `eBPF`
-- `libbpf`
-- Unix domain socket export
+- build a custom dashboard
+- export data into Prometheus, SQLite, or your own APIs
+- automate alerts and topology checks
+- compare WAN throughput against node-side probe throughput
+- add Linux-side network telemetry when Orbi is running as `AP mode`
 
-That collector is designed for hosts where Orbi runs in `AP mode` and a Linux router owns the LAN/WAN routing path.
+This project turns those hidden router responses into a clean Python API and CLI, then adds an optional native collector for real routed device traffic.
 
-## What it returns
+## What you get
 
-- Internet status
-- Current router settings from `currentsetting.htm`
-- Router metadata from `GetInfo`
-- Feature map from `GetSupportFeatureListXML`
-- Attached clients
-- Client node mapping (`ConnectedOrbi`)
-- Client `SSID`
-- Client `Linkspeed`
-- Client `SignalStrength`
-- Satellite list
-- Satellite backhaul type (`BHConnType`)
-- Satellite signal strength
-- Parsed raw action outputs under `sources.ajax` and `sources.soap`
-- Optional local `ping + iperf3 + speedtest` throughput estimate
+- Internet status from `POST /ajax/basicStatus.cgi`
+- attached device inventory from `POST /ajax/get_attached_devices`
+- router metadata from hidden SOAP actions such as `GetInfo`
+- support feature map from `GetSupportFeatureListXML`
+- satellite inventory and backhaul state
+- per-device fields such as:
+  - `ConnectedOrbi`
+  - `SSID`
+  - `Linkspeed`
+  - `SignalStrength`
+- parsed raw response sources for debugging and reverse engineering
+- optional local throughput estimate with `ping + iperf3 + speedtest`
+- optional native device traffic collector that exports:
+  - live `download_bps`
+  - live `upload_bps`
+  - per-device daily totals
+
+## Architecture
+
+The repository is intentionally split into two layers:
+
+- `orbi_monitor_core.client`
+  - AJAX + SOAP collector
+  - normalizes Orbi router, satellite, and client state
+- `native/device_traffic`
+  - Linux-only collector
+  - attaches `tc` eBPF programs on the LAN interface
+  - reads pinned maps through `libbpf`
+  - exports snapshots over a Unix domain socket
+
+That separation keeps the Orbi collector reusable even if you do not want the Linux traffic telemetry layer.
 
 ## Supported hardware
 
-The implementation has been verified against:
+Verified against:
 
 - `RBR750`
 - `RBS750`
@@ -59,7 +77,7 @@ python3 -m venv .venv
 pip install -e .
 ```
 
-Native collector prerequisites:
+Native collector build prerequisites:
 
 - `clang`
 - `llvm`
@@ -67,7 +85,9 @@ Native collector prerequisites:
 - `libelf-dev`
 - Linux headers matching the running kernel
 
-## Usage
+## Quick start
+
+Collect Orbi router state:
 
 ```bash
 orbi-monitor-core \
@@ -75,11 +95,20 @@ orbi-monitor-core \
   --username admin \
   --password 'your-router-password' \
   --target-satellite-name satellite-a \
-  --throughput-probe-host 192.168.1.31 \
+  --throughput-probe-host 192.168.50.10 \
   --pretty
 ```
 
-Example output:
+Read native device traffic from the Unix socket:
+
+```bash
+orbi-monitor-device-traffic \
+  --socket-path /run/orbi-monitor-core/device-traffic.sock \
+  --dashboard-json ./snapshot.json \
+  --pretty
+```
+
+## Example output
 
 ```json
 {
@@ -98,7 +127,7 @@ Example output:
     }
   ],
   "throughput": {
-    "probe_host": "192.168.1.31",
+    "probe_host": "192.168.50.10",
     "source_mode": "wifi_estimate",
     "lan_reverse_mbps": 185.4,
     "wan_download_mbps": 207.39,
@@ -136,7 +165,7 @@ Optional throughput probe:
 from orbi_monitor_core import measure_throughput
 
 sample = measure_throughput(
-    probe_host="192.168.1.31",
+    probe_host="192.168.50.10",
     probe_port=5201,
 )
 
@@ -144,70 +173,52 @@ print(sample.lan_reverse_mbps)
 print(sample.wan_download_mbps)
 ```
 
-Optional device traffic socket reader:
+## Device traffic telemetry
 
-```bash
-orbi-monitor-device-traffic \
-  --socket-path /run/orbi-monitor-core/device-traffic.sock \
-  --dashboard-json ./snapshot.json \
-  --pretty
-```
+The optional native collector is aimed at this deployment model:
 
-## Field reference
+- Orbi runs in `AP mode`
+- a Linux host owns `LAN -> WAN` routing
+- client traffic traverses a real Ethernet LAN interface
 
-Complete field documentation lives in [docs/SCHEMA.md](docs/SCHEMA.md).
+It uses:
 
-That document covers:
+- `tc ingress` and `tc egress`
+- `eBPF` for authoritative byte accounting
+- `libbpf` for direct pinned-map reads
+- a Unix socket for lightweight snapshot delivery
 
-- top-level snapshot structure
-- every `devices[]` field
-- every `satellites[]` field
-- `current_setting`, `router_info`, `support_features`, and `sources`
-- normalization rules
-- AJAX vs SOAP source preference
+It does not classify applications. That is intentionally deferred to a future DPI layer such as `nDPI`.
 
-## Validated SOAP actions
+The implementation details live in [docs/DEVICE_TRAFFIC.md](docs/DEVICE_TRAFFIC.md).
 
-Verified hidden SOAP methods are listed in [docs/VALIDATED_SOAP_ACTIONS.md](docs/VALIDATED_SOAP_ACTIONS.md).
+## Documentation
 
-That document covers:
+- [docs/SCHEMA.md](docs/SCHEMA.md)
+  - field reference for router, satellite, device, and source payloads
+- [docs/VALIDATED_SOAP_ACTIONS.md](docs/VALIDATED_SOAP_ACTIONS.md)
+  - hidden SOAP methods verified against real firmware
+- [docs/REVERSE_ENGINEERING.md](docs/REVERSE_ENGINEERING.md)
+  - reproducible workflow for discovering and validating new actions
+- [docs/DEVICE_TRAFFIC.md](docs/DEVICE_TRAFFIC.md)
+  - native collector internals, socket schema, attribution model, and troubleshooting
 
-- login transport and endpoint details
-- validated device actions
-- validated satellite actions
-- fields seen in real responses
-- known misleading paths such as `deviceinfo.cgi`
+## Design principles
 
-## Reverse engineering workflow
-
-A reproducible discovery workflow is documented in [docs/REVERSE_ENGINEERING.md](docs/REVERSE_ENGINEERING.md).
-
-That document covers:
-
-- how to start from `currentsetting.htm`
-- how to inspect AJAX and SOAP safely
-- how to use firmware strings to discover likely actions
-- how to validate new actions before merging them into a collector
-
-## Device traffic collector
-
-Native device traffic collector notes live in [docs/DEVICE_TRAFFIC.md](docs/DEVICE_TRAFFIC.md).
-
-That document covers:
-
-- `tc eBPF` scope and accounting model
-- `libbpf` direct map reads
-- socket output format
-- attribution fallback rules
-- build and run prerequisites
+- backend-first
+- stable normalized schemas
+- raw source preservation for debugging
+- Linux telemetry kept separate from Orbi protocol collection
+- no cloud dependency
+- no frontend requirement
 
 ## Notes
 
-- `SignalStrength` exposed by SOAP is the router-provided quality metric, not guaranteed to be RSSI in dBm.
-- The optional throughput helper is a host-side estimate. If your measuring host is on Wi-Fi, it is not proof of wired backhaul truth.
-- The optional device traffic collector is Linux-only and expects the measurement host to be the active router for routed client traffic.
-- This project does not ship any frontend, deployment system, or cloud integration.
-- No passwords, tokens, domains, or private configs are included in this repository.
+- `SignalStrength` exposed by SOAP is a router-provided quality metric, not guaranteed to be RSSI in dBm.
+- The throughput helper is a host-side estimate. If your measuring host is on Wi-Fi, it is not proof of wired backhaul truth.
+- The native collector is Linux-only and expects the measurement host to be the active router for routed client traffic.
+- Hardware offload and fast-path features may bypass `tc`; validate your deployment before trusting the counters.
+- No passwords, tokens, domains, or private deployment configs are included in this repository.
 
 ## License
 
