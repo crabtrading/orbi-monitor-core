@@ -1,0 +1,150 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1060" viewBox="0 0 1600 1060" role="img" aria-labelledby="title desc">
+  <title id="title">Router Topology Overview</title>
+  <desc id="desc">Xfinity and Google Fi connect to an AI Box soft router, which feeds an Orbi AP with satellites and direct clients.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fafbff"/>
+      <stop offset="100%" stop-color="#f3f7ff"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#dfe9ff" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#dfe9ff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="node" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f2f5fb"/>
+    </linearGradient>
+    <linearGradient id="modem" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f1118"/>
+      <stop offset="100%" stop-color="#292d39"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#8ea6d6" flood-opacity="0.16"/>
+    </filter>
+    <filter id="soft-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#9cb0d9" flood-opacity="0.18"/>
+    </filter>
+    <style>
+      .title { font: 600 24px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #3b4a69; }
+      .label { font: 600 20px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #2f3c57; }
+      .label-blue { font: 600 20px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #2f72ff; }
+      .meta { font: 400 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #8090ae; }
+      .meta-strong { font: 500 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #6f82a6; }
+      .line { stroke: #2f72ff; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+      .line-dashed { stroke: #668dff; stroke-width: 3; fill: none; stroke-linecap: round; stroke-dasharray: 10 10; }
+      .dot { fill: #2f72ff; }
+      .dot-text { font: 700 18px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #ffffff; dominant-baseline: middle; text-anchor: middle; }
+      .wifi { stroke: #8092ff; stroke-width: 2.5; fill: none; stroke-linecap: round; }
+      .small { font: 500 12px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #8b9abb; }
+    </style>
+  </defs>
+
+  <rect width="1600" height="1060" fill="url(#bg)"/>
+  <circle cx="800" cy="260" r="560" fill="url(#glow)"/>
+
+  <text x="96" y="90" class="title">Soft Router Topology</text>
+  <text x="96" y="120" class="meta">Failover-aware LAN/WAN path with Orbi AP and satellites</text>
+
+  <!-- Left nodes -->
+  <rect x="140" y="366" rx="14" ry="14" width="52" height="86" fill="url(#modem)" filter="url(#soft-shadow)"/>
+  <rect x="152" y="374" rx="3" ry="3" width="28" height="6" fill="#161926"/>
+  <rect x="156" y="388" rx="2" ry="2" width="4" height="54" fill="#181c29"/>
+  <rect x="164" y="388" rx="2" ry="2" width="4" height="54" fill="#181c29"/>
+  <rect x="172" y="388" rx="2" ry="2" width="4" height="54" fill="#181c29"/>
+  <text x="165" y="492" class="label-blue" text-anchor="middle">Xfinity</text>
+  <text x="165" y="528" class="meta-strong" text-anchor="middle">Active</text>
+
+  <rect x="148" y="646" rx="12" ry="12" width="38" height="78" fill="#eef3ff" stroke="#c7d6ff" filter="url(#soft-shadow)"/>
+  <rect x="151" y="652" rx="8" ry="8" width="32" height="68" fill="url(#node)"/>
+  <rect x="156" y="660" rx="4" ry="4" width="22" height="40" fill="#5f6ea1"/>
+  <circle cx="167" cy="709" r="3" fill="#cfd7f0"/>
+  <text x="167" y="760" class="label" text-anchor="middle">Google Fi</text>
+  <text x="167" y="796" class="meta-strong" text-anchor="middle">Standby</text>
+
+  <!-- AI box -->
+  <g filter="url(#shadow)">
+    <rect x="394" y="529" rx="10" ry="10" width="104" height="42" fill="url(#modem)"/>
+    <rect x="401" y="537" rx="3" ry="3" width="56" height="26" fill="#222634"/>
+    <rect x="461" y="537" rx="2" ry="2" width="9" height="8" fill="#2f72ff"/>
+    <rect x="474" y="537" rx="2" ry="2" width="9" height="8" fill="#ff7043"/>
+    <rect x="461" y="549" rx="2" ry="2" width="22" height="6" fill="#404b67"/>
+  </g>
+  <text x="446" y="636" class="label-blue" text-anchor="middle">AI Box</text>
+  <text x="446" y="670" class="meta-strong" text-anchor="middle">Healthy · Xfinity</text>
+
+  <!-- Orbi AP -->
+  <g filter="url(#shadow)">
+    <ellipse cx="716" cy="561" rx="34" ry="8" fill="#d7eefc"/>
+    <rect x="682" y="336" rx="22" ry="22" width="68" height="225" fill="url(#node)"/>
+    <ellipse cx="716" cy="336" rx="34" ry="8" fill="#00b2ff"/>
+    <ellipse cx="716" cy="561" rx="34" ry="8" fill="#e7edf8"/>
+    <text x="716" y="528" class="small" text-anchor="middle">orbi</text>
+  </g>
+  <text x="716" y="642" class="label-blue" text-anchor="middle">Orbi AP</text>
+  <text x="716" y="676" class="meta-strong" text-anchor="middle">16 direct clients · 2 satellites</text>
+
+  <!-- Distribution hub -->
+  <circle cx="964" cy="548" r="24" class="dot" filter="url(#soft-shadow)"/>
+  <text x="964" y="547" class="dot-text">−</text>
+
+  <!-- ADU -->
+  <g filter="url(#shadow)">
+    <ellipse cx="1296" cy="366" rx="31" ry="7" fill="#d7eefc"/>
+    <rect x="1265" y="292" rx="20" ry="20" width="62" height="128" fill="url(#node)"/>
+    <ellipse cx="1296" cy="292" rx="31" ry="7" fill="#b8def0"/>
+    <ellipse cx="1296" cy="420" rx="31" ry="7" fill="#e7edf8"/>
+    <text x="1296" y="396" class="small" text-anchor="middle">orbi</text>
+  </g>
+  <text x="1296" y="470" class="label" text-anchor="middle">ADU</text>
+  <text x="1296" y="504" class="meta-strong" text-anchor="middle">Wired · Good · 19 clients</text>
+
+  <!-- Living -->
+  <g filter="url(#shadow)">
+    <ellipse cx="1296" cy="612" rx="31" ry="7" fill="#d7eefc"/>
+    <rect x="1265" y="538" rx="20" ry="20" width="62" height="128" fill="url(#node)"/>
+    <ellipse cx="1296" cy="538" rx="31" ry="7" fill="#b8def0"/>
+    <ellipse cx="1296" cy="666" rx="31" ry="7" fill="#e7edf8"/>
+    <text x="1296" y="642" class="small" text-anchor="middle">orbi</text>
+  </g>
+  <path d="M1226 588c8-10 24-10 32 0" class="wifi"/>
+  <path d="M1232 595c5-6 15-6 20 0" class="wifi"/>
+  <circle cx="1242" cy="603" r="2.5" fill="#8092ff"/>
+  <text x="1296" y="714" class="label" text-anchor="middle">Living</text>
+  <text x="1296" y="748" class="meta-strong" text-anchor="middle">5 GHz · Good · 2 clients</text>
+
+  <!-- Direct clients -->
+  <g filter="url(#soft-shadow)">
+    <rect x="1240" y="844" rx="8" ry="8" width="110" height="50" fill="url(#node)"/>
+    <rect x="1248" y="852" rx="4" ry="4" width="94" height="26" fill="#eef2fa"/>
+    <g fill="#7d8da9">
+      <rect x="1252" y="856" width="6" height="14" rx="1"/>
+      <rect x="1262" y="856" width="6" height="14" rx="1"/>
+      <rect x="1272" y="856" width="6" height="14" rx="1"/>
+      <rect x="1282" y="856" width="6" height="14" rx="1"/>
+      <rect x="1292" y="856" width="6" height="14" rx="1"/>
+      <rect x="1302" y="856" width="6" height="14" rx="1"/>
+      <rect x="1312" y="856" width="6" height="14" rx="1"/>
+      <rect x="1322" y="856" width="6" height="14" rx="1"/>
+      <rect x="1332" y="856" width="6" height="14" rx="1"/>
+    </g>
+  </g>
+  <text x="1296" y="950" class="label" text-anchor="middle">Direct Clients</text>
+  <text x="1296" y="984" class="meta-strong" text-anchor="middle">16 direct clients</text>
+
+  <!-- Connectors -->
+  <path d="M255 409 H325 V549 H372" class="line"/>
+  <path d="M255 684 H325 V549" stroke="#cad4e6" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M520 549 H628" class="line"/>
+  <path d="M804 549 H940" class="line"/>
+  <path d="M964 524 V337 H1204" class="line"/>
+  <path d="M988 549 H1186" class="line-dashed"/>
+  <path d="M964 572 V870 H1204" class="line"/>
+
+  <!-- Join markers -->
+  <circle cx="1106" cy="337" r="18" class="dot" filter="url(#soft-shadow)"/>
+  <text x="1106" y="337" class="dot-text">+</text>
+  <circle cx="1106" cy="549" r="18" class="dot" filter="url(#soft-shadow)"/>
+  <text x="1106" y="549" class="dot-text">+</text>
+  <circle cx="1106" cy="870" r="18" class="dot" filter="url(#soft-shadow)"/>
+  <text x="1106" y="870" class="dot-text">+</text>
+</svg>
