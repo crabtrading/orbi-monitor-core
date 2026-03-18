@@ -4,15 +4,15 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "orbi-monitor-core"
-version = "0.1.2"
-description = "Core Orbi RBR750/RBS750 AJAX and SOAP data collector"
+version = "0.2.0"
+description = "Core Orbi AJAX/SOAP collector with optional native device traffic telemetry"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [
   { name = "crabtrading" }
 ]
-keywords = ["netgear", "orbi", "rbr750", "rbs750", "soap", "monitoring"]
+keywords = ["netgear", "orbi", "rbr750", "rbs750", "soap", "monitoring", "ebpf", "libbpf"]
 classifiers = [
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
@@ -28,6 +28,7 @@ dependencies = [
 
 [project.scripts]
 orbi-monitor-core = "orbi_monitor_core.cli:main"
+orbi-monitor-device-traffic = "orbi_monitor_core.device_traffic:main"
 
 [tool.setuptools.packages.find]
 include = ["orbi_monitor_core*"]

@@ -15,6 +15,15 @@ It also includes an optional local throughput helper for cases where you want to
 - WAN download speed from the measurement host
 - probe download-like throughput to a node behind a satellite
 
+It now also includes an optional **native device traffic collector** built with:
+
+- `tc`
+- `eBPF`
+- `libbpf`
+- Unix domain socket export
+
+That collector is designed for hosts where Orbi runs in `AP mode` and a Linux router owns the LAN/WAN routing path.
+
 ## What it returns
 
 - Internet status
@@ -49,6 +58,14 @@ python3 -m venv .venv
 . .venv/bin/activate
 pip install -e .
 ```
+
+Native collector prerequisites:
+
+- `clang`
+- `llvm`
+- `libbpf-dev`
+- `libelf-dev`
+- Linux headers matching the running kernel
 
 ## Usage
 
@@ -127,6 +144,15 @@ print(sample.lan_reverse_mbps)
 print(sample.wan_download_mbps)
 ```
 
+Optional device traffic socket reader:
+
+```bash
+orbi-monitor-device-traffic \
+  --socket-path /run/orbi-monitor-core/device-traffic.sock \
+  --dashboard-json ./snapshot.json \
+  --pretty
+```
+
 ## Field reference
 
 Complete field documentation lives in [docs/SCHEMA.md](docs/SCHEMA.md).
@@ -163,10 +189,23 @@ That document covers:
 - how to use firmware strings to discover likely actions
 - how to validate new actions before merging them into a collector
 
+## Device traffic collector
+
+Native device traffic collector notes live in [docs/DEVICE_TRAFFIC.md](docs/DEVICE_TRAFFIC.md).
+
+That document covers:
+
+- `tc eBPF` scope and accounting model
+- `libbpf` direct map reads
+- socket output format
+- attribution fallback rules
+- build and run prerequisites
+
 ## Notes
 
 - `SignalStrength` exposed by SOAP is the router-provided quality metric, not guaranteed to be RSSI in dBm.
 - The optional throughput helper is a host-side estimate. If your measuring host is on Wi-Fi, it is not proof of wired backhaul truth.
+- The optional device traffic collector is Linux-only and expects the measurement host to be the active router for routed client traffic.
 - This project does not ship any frontend, deployment system, or cloud integration.
 - No passwords, tokens, domains, or private configs are included in this repository.
 
